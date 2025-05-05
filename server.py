@@ -13,7 +13,8 @@ from urllib.request import Request, build_opener, URLError, HTTPHandler
 from typing import Dict, Any, List, Tuple, Optional
 from datetime import datetime
 import html
-from prometheus_client.openmetrics import parser
+from prometheus_client.parser import text_string_to_metric_families
+from prometheus_client import Metric
 
 # Configure logging
 logging.basicConfig(
@@ -228,6 +229,48 @@ def validate_data_plaintext(data: str) -> bool:
     except Exception as e:
         logger.error(f"Error sending request to lint server: {str(e)}")
         return False
+    
+
+def extract_metric_properties(data: str) -> Dict[str, Metric]:
+    """Extract metric properties from the decoded metrics data.
+
+    This function parses the metrics data and extracts relevant properties
+    such as metric names, labels, and types. It returns a dictionary of
+    metric properties.
+
+    Example output:
+        Metric Family: sample_requests
+          Documentation: Total number of requests processed
+          Unit: 
+          Type: counter
+          Labels: {'userid', 'endpoint', 'method'}
+
+    """
+    metric_properties = {}
+    try:
+        # Decode the data to get the metric families
+        for family in text_string_to_metric_families(data):
+            labels = set()
+            print(f"Metric Family: {family.name}")
+            print(f"  Documentation: {family.documentation}")
+            print(f"  Unit: {family.unit}")
+            print(f"  Type: {family.type}")
+            for sample in family.samples:
+                labels.update(sample.labels.keys())
+            print(f"  Labels: {labels}")
+            metric_properties[family.name] = family
+    except Exception as e:
+        logger.error(f"Error parsing metrics data: {str(e)}")
+        return None
+    return metric_properties
+
+
+def validate_metric_properties(properties: Dict[str, Metric]) -> bool:
+    """Validate the metric properties to ensure they meet certain criteria."""
+    # Example validation: Check if the metric name is valid
+    for key, value in properties.items():
+        logger.info(f"Key: {key}, Value: {value}")
+    return True
 
 
 @app.route('/push_metrics', methods=['POST'])
@@ -262,7 +305,7 @@ def push_metrics():
             return jsonify({"error": "Missing 'target_url' parameter"}), 400
         if not encoded_data:
             return jsonify({"error": "Missing 'data' parameter"}), 400
-            
+
         # Decode base64 data
         try:
             data = base64.b64decode(encoded_data)
@@ -277,10 +320,15 @@ def push_metrics():
         # Validate the target URL
         # Extract the base URL address and check it matches the defined _PUSH_GATEWAY_URL
 
-        # Validate metrics data
+        # Validate metrics data format
         # Alternatively, we can also log into a retry-queue system for processing later
         if not validate_data_plaintext(decoded_data):
             return jsonify({"error": "Invalid metrics data"}), 400
+        
+        # Validate metrics properties
+        metric_properties = extract_metric_properties(decoded_data)
+        if metric_properties is None or not validate_metric_properties(metric_properties):
+            return jsonify({"error": "Invalid metric properties"}), 400
 
         # Convert headers dict back to list of tuples
         headers = [(k, v) for k, v in headers_dict.items()]

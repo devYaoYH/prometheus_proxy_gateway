@@ -15,6 +15,12 @@ scrape_configs:
     # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
 
+    # Basic user password authorization
+    # This is only for testing purposes, do not use in production
+    basic_auth:
+      username: 'admin'
+      password: 'password'
+
     static_configs:
     # Pull from 'localhost:9091' gateway server endpoint
       - targets: ['localhost:9090', 'localhost:9091']

@@ -204,9 +204,16 @@ def proxy_handler(
 
 ### Authorization guardrails
 
-Prometheus gateway server will be guarded behind some auth, which I'm simulating here with password secret inserted during pushgateway startup.
+Prometheus gateway server should be guarded behind some authorization - which would be handled by the deployment endpoint. Auth to scrape from the configured push gateway server can be done by specifying in the `basic_auth` in `scrape_configs` under `sample_prometheus_server_config.yml` (or where the main prometheus metrics server is running).
 
 ### Error checking & Metrics Validation
+
+We perform 2 kinds of error checking:
+
+1. Prometheus Lint tool (exposed in Prometheus' [client_golang](https://github.com/prometheus/client_golang/blob/main/prometheus/testutil/promlint/promlint.go)). Which test for proper formatting of the metrics plaintext dump.
+2. Afterwards, we parse the given plaintext and extract a dictionary of Metrics using the python_client library: [`from prometheus_client.parser import text_string_to_metric_families`](https://github.com/prometheus/client_python/blob/e3902ea45b4bfbaf6ff1d10c3889107e6c8f51fc/prometheus_client/parser.py). Which allows us to perform additional assertions/checks on the expected list of metrics to be logged.
+
+See function `validate_metric_properties` for adding validations on top of the contents of Metric properties.
 
 #### Request Validation
 
@@ -224,3 +231,13 @@ E.g. aggregating all counts of query endpoint usage per user given ID field:
 ```
 sum by (endpoint, userid, method, job) (sample_requests_total)
 ```
+
+### Push Gateway usage
+
+https://prometheus.io/docs/practices/pushing/#should-i-be-using-the-pushgateway
+
+Pushed metrics for a given job/metric name will be persistent and exposed via `gateway_url/metrics` to be pulled by Prometheus metrics collector service. This means we will always be caching the latest client metrics if we use Push Gateway.
+
+### tl;dr
+
+**Each log instance should be differentiated with a unique `<userid, session_key>` combination.**
