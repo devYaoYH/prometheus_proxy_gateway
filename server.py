@@ -13,6 +13,7 @@ from urllib.request import Request, build_opener, URLError, HTTPHandler
 from typing import Dict, Any, List, Tuple, Optional
 from datetime import datetime
 import html
+from prometheus_client.openmetrics import parser
 
 # Configure logging
 logging.basicConfig(
@@ -201,6 +202,34 @@ def index():
     
     return render_template_string(INDEX_TEMPLATE, latest=display_data)
 
+
+_LINT_SERVER_URL = "http://localhost:8080/lint"  # Example URL for a linting server
+
+
+def validate_data_plaintext(data: str) -> bool:
+    """Validate the plaintext metrics data to ensure it is in the correct format."""
+    try:
+        request_obj = Request(_LINT_SERVER_URL, data.encode('utf-8'), method='PUT')
+        request_obj.add_header('Content-Type', 'text/plain')
+        resp = build_opener(HTTPHandler).open(request_obj, timeout=10)
+        resp_body = resp.read().decode('utf-8')
+        print(f"[Lint server] Response: {resp_body}")
+        # Pessimistic check: if the response code is not 200, consider it an error
+        if resp.code != 200:
+            logger.error(f"Lint server returned error: {resp.code} {resp.msg}")
+            return False
+        else:
+            response = json.loads(resp_body)
+            status = response.get("status", None)
+            if status != "success":
+                logger.error(f"Lint server returned error: {resp_body}")
+                return False
+        return True
+    except Exception as e:
+        logger.error(f"Error sending request to lint server: {str(e)}")
+        return False
+
+
 @app.route('/push_metrics', methods=['POST'])
 def push_metrics():
     """
@@ -245,7 +274,13 @@ def push_metrics():
         
         print(f"[Proxy server]] Received data: \n{decoded_data}")
 
+        # Validate the target URL
+        # Extract the base URL address and check it matches the defined _PUSH_GATEWAY_URL
+
         # Validate metrics data
+        # Alternatively, we can also log into a retry-queue system for processing later
+        if not validate_data_plaintext(decoded_data):
+            return jsonify({"error": "Invalid metrics data"}), 400
 
         # Convert headers dict back to list of tuples
         headers = [(k, v) for k, v in headers_dict.items()]

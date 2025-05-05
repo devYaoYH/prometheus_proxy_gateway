@@ -20,6 +20,18 @@ NOTE: The default server port is on `localhost:9090`, metrics can be inspected v
 
 Start proxy server with flask: `python server.py`.
 
+### Start lint server
+
+Build and start go server for leveraging Prometheus library code for linting metrics plaintext.
+
+```
+cd metrics-lint-server
+go build -o metriclint_server metriclist_server.go
+./metric_lint_server
+```
+
+NOTE: The above opens a port on `localhost:8080` by default, accepting a PUT request via `/lint`.
+
 ### Execute client to test logging metrics
 
 Execute a test client session using: `python client.py`.

@@ -174,7 +174,7 @@ def main():
     try:
         # Simulate the batch job
         print("Running batch job and collecting metrics...")
-        for i in range(5):
+        for i in range(1):
             print(f"Iteration {i+1}/5...")
             simulate_requests()
             time.sleep(0.5)
