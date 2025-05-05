@@ -4,6 +4,26 @@
 Desktop Application --> Proxy Server --> Prometheus Pushgateway <-- Prometheus Metrics Server
 ```
 
+## Usage
+
+### Start Prometheus servers
+
+Start a Prometheus PushGateway server by executing the binary from official github repo [here](https://github.com/Prometheus/pushgateway?tab=readme-ov-file#run-it).
+
+NOTE: This should start a running instance by default on `localhost:9091`.
+
+Start a Prometheus Metrics collection server by [downloading](https://prometheus.io/docs/prometheus/latest/getting_started/#getting-started) and starting with the [`sample_prometheus_server_config.yml`](sample_prometheus_server_config.yml).
+
+NOTE: The default server port is on `localhost:9090`, metrics can be inspected via: http://localhost:9090/graph.
+
+### Start proxy server
+
+Start proxy server with flask: `python server.py`.
+
+### Execute client to test logging metrics
+
+Execute a test client session using: `python client.py`.
+
 ## Why?
 
 Client logs can be noisy and direct access to the gateway server may not be available from the client-side (due to e.g. security authorization requirements).
