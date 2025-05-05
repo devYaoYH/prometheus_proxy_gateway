@@ -243,6 +243,8 @@ def push_metrics():
             logger.error(f"Error decoding data: {str(e)}")
             return jsonify({"error": f"Invalid base64 data: {str(e)}"}), 400
         
+        print(f"[Proxy server]] Received data: {decoded_data}")
+
         # Convert headers dict back to list of tuples
         headers = [(k, v) for k, v in headers_dict.items()]
         
