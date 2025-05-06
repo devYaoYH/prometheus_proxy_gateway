@@ -8,11 +8,8 @@ from flask import Flask, request, jsonify, render_template_string, redirect
 import logging
 import base64
 import json
-import time
 from urllib.request import Request, build_opener, URLError, HTTPHandler
-from typing import Dict, Any, List, Tuple, Optional
-from datetime import datetime
-import html
+from typing import Dict
 from prometheus_client.parser import text_string_to_metric_families
 from prometheus_client import Metric
 
@@ -173,7 +170,6 @@ def push_metrics():
             if resp.code >= 400:
                 error_msg = f"Error from Pushgateway: {resp.code} {resp.msg}"
                 logger.error(error_msg)
-                
                 return jsonify({"error": error_msg}), resp.code
             
             logger.info(f"Successfully forwarded request to {target_url}")
@@ -186,7 +182,6 @@ def push_metrics():
         except URLError as e:
             error_msg = f"Error connecting to Pushgateway: {str(e)}"
             logger.error(error_msg)
-            
             return jsonify({"error": error_msg}), 500
             
     except Exception as e:

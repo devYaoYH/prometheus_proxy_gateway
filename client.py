@@ -11,7 +11,7 @@ import random
 from urllib.request import (
     BaseHandler, build_opener, Request, HTTPHandler
 )
-from typing import Any, Callable, Optional, Sequence, Tuple, Union, List
+from typing import Any, Callable, Optional, Sequence, Tuple, Union
 from prometheus_client import (
     CollectorRegistry, Counter, Gauge, Histogram, Summary, push_to_gateway
 )
@@ -174,7 +174,7 @@ def main():
     try:
         # Simulate the batch job
         print("Running batch job and collecting metrics...")
-        for i in range(1):
+        for i in range(5):
             print(f"Iteration {i+1}/5...")
             simulate_requests()
             time.sleep(0.5)
